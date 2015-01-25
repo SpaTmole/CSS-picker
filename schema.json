@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "Snippets": {
+      "type": "array",
+      "id": "ListOfSnippets",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": { "type": "integer" },
+          "origin_url": { "type": "string" },
+          "element": {"type": "string"},
+          "snippet": {"type": "string"}
+        }
+      }
+    }
+  }
+}

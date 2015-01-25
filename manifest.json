@@ -1,0 +1,36 @@
+{
+  "manifest_version": 2,
+  "name": "CSS Picker",
+  "version": "1.0",
+
+  "description": "Powerful developers tool which allows to pick whole pack of CSS rules from selected DOM element.",
+  "icons": {
+    "256": "images/icon.png"
+  },
+
+  "browser_action": {
+    "default_icon": {
+      "256": "images/icon.png"
+    },
+    "default_title": "CSS Picker",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "persistent": false,
+    "scripts": ["app.js"]
+  },
+  "author": "Konstantin Oficerov",
+  "permissions": [
+    "activeTab",
+    "browsingData",
+    "contextMenus",
+    "storage",
+    "declarativeContent",
+    "fontSettings",
+    "clipboardRead",
+    "clipboardWrite"
+  ],
+  "storage": {
+    "managed_schema": "schema.json"
+  }
+}
