@@ -1,15 +1,16 @@
 /**
  * Created by konstantin on 1/25/15.
  */
-(function(){
-   chrome.contextMenus.create({
-        type: "separator"
-   }, function(){
+chrome.runtime.onInstalled.addListener(function(){
+   chrome.contextMenus.create({type: "separator", contexts: ["all"]}, function(){
        chrome.contextMenus.create({
-           type: "normal",
-           title: "Inspect element style ",
-           id: "contextMenuInspectorItem"
-       }, function(){chrome.contextMenus.create({
-        type: "separator"})});
+           title: "Inspect element style",
+           id: "contextMenuInspectorItem",
+           contexts: ["all"]
+       }, function(){chrome.contextMenus.create({type: "separator", contexts: ["all"]})});
+       chrome.contextMenus.onClicked.addListener(function (info, tab) {
+           if(info.menuItemId == "contextMenuInspectorItem")
+               console.log('Inspecting element: ', arguments);
+       });
    });
-})();
+});
