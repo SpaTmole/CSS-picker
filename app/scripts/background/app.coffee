@@ -8,17 +8,18 @@ chrome.runtime.onInstalled.addListener ()->
         }, ()->
             chrome.contextMenus.create({type: "separator", contexts: ["all"]})
         )
-        chrome.contextMenus.onClicked.addListener((info, tab) ->
-            if(info.menuItemId == "contextMenuInspectorItem")
-                console.log('Inspecting element: ', arguments)
-                chrome.tabs.query {active: true, currentWindow: true}, (tabs) ->
+        chrome.contextMenus.onClicked.addListener (info, tab) ->
+            if info.menuItemId == "contextMenuInspectorItem"
+                console.log 'Inspecting element: ', arguments
+                chrome.tabs.query {active: yes, currentWindow: yes}, (tabs) ->
                     chrome.tabs.sendMessage tabs[0].id,
                         {
                             data: 'contextMenu'
                             csrf: message_bus_uuid
                         },
                         (response) ->
-                            console.log(response)
+                            console.log response
+                            alert 'We got it pal'
             return
-        )
+
     )

@@ -8,9 +8,14 @@ class StyleParser
     matchElement: (css_selector)->
         if $(@element)[0] in $(css_selector)
             return yes
-        css_selector = css_selector.split(':')
-        if $(@element)[0] in $(css_selector[0])
-            return yes
+        selectors_set = css_selector.split(',')
+        for selector in selectors_set
+            selector = selector.split(':')[0]
+            try
+                if $(@element)[0] in $(selector)
+                    return yes
+            catch wrong_selector
+                console.error "Invalid selector: ", selector, " from ", css_selector
         return no
 
     fetchStyleSheetRules: ->
@@ -26,17 +31,19 @@ class StyleParser
                     straightFetch _rule, rule.media.mediaText
 
         for sheet in document.styleSheets
-            for rule in sheet.cssRules
-                straightFetch rule
+            if sheet.cssRules?
+                for rule in sheet.cssRules
+                    straightFetch rule
+        return @
 
     getCustomStyles: ->
-        @styles = @parseRules $(@element).attr 'style'
+        @styles = @parseRules $(@element).attr('style') or ""
         @attributes = {}
         attributes = $(@element)[0].attributes
         for attribute in attributes
             if attribute.name isnt 'style'
                 @attributes[attribute.name] = attribute.value
-        return
+        return @
 
     parseRules: (rules_str) ->
         result = {}
@@ -44,20 +51,46 @@ class StyleParser
         for token in rules_array
             if token.length > 0
                 named_value = token.split ':'
-                name = named_value[0]
+                name = @removeIndentation named_value[0]
                 named_value[0] = ""
                 value = named_value.join ""
-                result[name] = value
+                result[name] = @removeIndentation value
         result
 
+    invoke: ()->
+        @getCustomStyles().fetchStyleSheetRules()
+        element: @pretifyElement()
+        styles: @styles
+        attributes: @attributes
+        rules: @rules
+
+    pretifyElement: ->
+        classes = ""
+        for cls in @element.classList
+            classes += ".#{cls}"
+        return "#{@element.tagName.toLowerCase()}#{classes}"
+
+    removeIndentation: (string) ->
+        if string[0] == " "
+            string = string.slice(1)
+        if string[string.length - 1] == " "
+            string = string.slice(0, string.length - 1)
+        string
 
 $(document).ready ()->
     parser = null
     chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
         message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
         if request.csrf == message_bus_uuid
-            console.log 'Data Recieved: ', request.data, parser
-            $(parser.element).css({'border': 'solid 3px red'})
+            console.log 'Data Recieved: ', request.data
+            result = parser.invoke()
+            console.log "CSS: ", result
+            sendResponse(
+                data: result
+                type: "styles"
+                csrf: message_bus_uuid
+            )
+
             # Here we need to make callback to extension, which will open Modal dialog.
 
     $(window).on('mousedown', (e)->
