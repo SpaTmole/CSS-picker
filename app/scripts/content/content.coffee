@@ -51,16 +51,16 @@ class StyleParser
         result
 
 
-
 $(document).ready ()->
+    parser = null
+    chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
+        message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
+        if request.csrf == message_bus_uuid
+            console.log 'Data Recieved: ', request.data, parser
+            $(parser.element).css({'border': 'solid 3px red'})
+            # Here we need to make callback to extension, which will open Modal dialog.
+
     $(window).on('mousedown', (e)->
-
         if e.button is 2
-            window.custom_selected_element = $(e.toElement)
+            parser = new StyleParser e.toElement
     )
-
-chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
-    message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
-    if request.csrf == message_bus_uuid
-        console.log 'Data Recieved: ', request.data, window.custom_selected_element
-        $(window.custom_selected_element).css({'border': 'solid 3px red'})
