@@ -29,13 +29,13 @@ options =
     lintspaces: {
                 newline: yes
                 newlineMaximum: 2
-                indentation: "spaces"
+                indentation: 4
                 spaces: 4
                 }
 
 gulp.task "coffee_lint", () ->
     gulp.src([path.coffee.bg, path.coffee.content])
-        .pipe(coffeelint())
+        .pipe(coffeelint({indentation: 4}))
         .pipe(coffeelint.reporter())
 
 
