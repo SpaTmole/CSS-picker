@@ -1,4 +1,5 @@
 chrome.runtime.onInstalled.addListener ()->
+    message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
     chrome.contextMenus.create({type: "separator", contexts: ["all"]}, ()->
         chrome.contextMenus.create({
             title: "Inspect element style",
@@ -14,7 +15,7 @@ chrome.runtime.onInstalled.addListener ()->
                     chrome.tabs.sendMessage tabs[0].id,
                         {
                             data: 'contextMenu'
-                            csrf: '1' # TODO: of course it is insecure, use uuid with sha
+                            csrf: message_bus_uuid
                         },
                         (response) ->
                             console.log(response)

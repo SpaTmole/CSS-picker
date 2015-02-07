@@ -11,13 +11,13 @@
     "js": ["lib.min.js", "content.js"],
     "matches": [ "*://*/*"]
   }],
-  "options_page": "options.html",
+  "options_page": "templates/options.html",
   "browser_action": {
     "default_icon": {
       "256": "app/images/icon.png"
     },
     "default_title": "CSS Picker",
-    "default_popup": "popup.html"
+    "default_popup": "templates/popup.html"
   },
   "background": {
     "persistent": true,
