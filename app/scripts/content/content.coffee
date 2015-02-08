@@ -77,21 +77,70 @@ class StyleParser
             string = string.slice(0, string.length - 1)
         string
 
+
+class TemplateHandler
+    constructor: ->
+        @templates = {}
+
+    get: (name)->
+        return @templates[name] or null
+
+    set: (name, code) ->
+        if @templates[name]?
+            @destroy(name)
+        @templates[name] = code
+
+    bind: (template_name, element, fn) ->
+        template = @get(template_name)
+        if !template
+            return console.error "Template <#{template_name}> does not exist."
+        binding_elem = $(template).find($(element))
+        if !binding_elem
+            return console.error "Couldn't find given element within <#{template_name}> template."
+        return $(binding_elem).on 'click', fn
+
+    render: (name) ->
+        template = @get(name)
+        if !template
+            return console.error "Template <#{template_name}> does not exist."
+        $(template).appendTo($('body'))
+
+    dismiss: (name) ->
+        template = @get(name)
+        if !template
+            return console.error "Template <#{template_name}> does not exist."
+        $(template).detach()
+
+    destroy: (name) ->
+        template = @get(name)
+        if !template
+            return console.error "Template <#{template_name}> does not exist."
+        $(template).remove()
+        delete @templates[name]
+
+
 $(document).ready ()->
     parser = null
+    result = null
+    viewController = new TemplateHandler()
     chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
         message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
         if request.csrf == message_bus_uuid
-            console.log 'Data Recieved: ', request.data
-            result = parser.invoke()
-            console.log "CSS: ", result
-            sendResponse(
-                data: result
-                type: "styles"
-                csrf: message_bus_uuid
-            )
+            if request.message == "inspectWithContextMenu"
+                console.log 'Data Recieved: ', request.data
+                result = parser.invoke()
+                console.log "CSS: ", result
+                sendResponse
+                    message: "loadTemplate"
+                    name: "modal"
+                    data: result
+                    csrf: message_bus_uuid
+                return
+            if request.message == 'loadTemplate'
+                if request.name == 'modal'
+                    viewController.set request.name, request.data
+                    viewController.render(request.name).modal('show')
 
-            # Here we need to make callback to extension, which will open Modal dialog.
 
     $(window).on('mousedown', (e)->
         if e.button is 2

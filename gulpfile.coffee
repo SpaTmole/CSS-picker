@@ -78,7 +78,13 @@ gulp.task "sass", () ->
         .pipe(sass())
         .pipe(gulp.dest(path.css))
 
-gulp.task "build", ["build_app", "concat_bower", "sass"]
+gulp.task "styles", ["sass"], ->
+    gulp.src(["#{path.css}/*.css"])
+        .pipe(concat("content.css"))
+        .pipe(gulp.dest(""))
+    del("#{[path.css]}/")
+
+gulp.task "build", ["build_app", "concat_bower", "styles"]
 
 
 #gulp.task "test", ["build", "karma"]
