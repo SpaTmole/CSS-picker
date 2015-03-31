@@ -102,19 +102,19 @@ class TemplateHandler
     render: (name) ->
         template = @get(name)
         if !template
-            return console.error "Template <#{template_name}> does not exist."
+            return console.error "Template <#{name}> does not exist."
         $(template).appendTo($('body'))
 
     dismiss: (name) ->
         template = @get(name)
         if !template
-            return console.error "Template <#{template_name}> does not exist."
+            return console.error "Template <#{name}> does not exist."
         $(template).detach()
 
     destroy: (name) ->
         template = @get(name)
         if !template
-            return console.error "Template <#{template_name}> does not exist."
+            return console.error "Template <#{name}> does not exist."
         $(template).remove()
         delete @templates[name]
 
