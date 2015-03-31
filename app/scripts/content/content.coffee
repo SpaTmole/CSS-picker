@@ -15,7 +15,7 @@ class StyleParser
                 if $(@element)[0] in $(selector)
                     return yes
             catch wrong_selector
-                console.error "Invalid selector: ", selector, " from ", css_selector
+                console.error "Invalid selector: ", selector, " from ", {selector: css_selector}
         return no
 
     fetchStyleSheetRules: ->
@@ -139,7 +139,11 @@ $(document).ready ()->
             if request.message == 'loadTemplate'
                 if request.name == 'modal'
                     viewController.set request.name, request.data
-                    viewController.render(request.name).modal('show')
+                    modal = viewController.render(request.name)
+                    modal.modal('show')
+                    modal.on('hidden.bs.modal', ()->
+                        $(modal).remove()
+                    )
 
 
     $(window).on('mousedown', (e)->

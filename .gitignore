@@ -8,3 +8,4 @@ content.js
 content.css
 bower_components/
 node_modules/
+app/styles/css/*

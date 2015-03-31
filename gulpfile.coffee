@@ -28,7 +28,7 @@ path =
 options =
     lintspaces: {
                 newline: yes
-                newlineMaximum: 2
+                newlineMaximum: 4
                 indentation: 4
                 spaces: 4
                 }
@@ -82,7 +82,7 @@ gulp.task "styles", ["sass"], ->
     gulp.src(["#{path.css}/*.css"])
         .pipe(concat("content.css"))
         .pipe(gulp.dest(""))
-    del("#{[path.css]}/")
+    #del("#{[path.css]}/")
 
 gulp.task "build", ["build_app", "concat_bower", "styles"]
 
