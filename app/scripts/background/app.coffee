@@ -6,15 +6,15 @@ class TemplateParser
         @html = raw_data
 
     _for_in = (render, object)->
-    ###
+        ###
         Private static method which replaces within passed @render text all {% for in %} injections
         by values kept in @object which are expected to be iterable.
-    ###
+        ###
         result = render
-        re = /\{%\s*?for\s+?.+?\s+?in\s+?.+?\s*?%}.*?\{%\s*?endfor\s*?%}/gi
+        re = /\{%\s*?for\s+?.+?\s+?in\s+?.+?\s*?%}(.|\n)*?\{%\s*?endfor\s*?%}/gim
         keys = $.map(object, (el, key)->return [key])
 
-        matches = render.match re
+        matches = render.match(re) or []
         for match in matches
             loop_render = ""
             for_in = match.match(/\{%\s*?for\s+?.+?\s+?in\s+?.+?\s*?%}/).shift()
@@ -41,9 +41,9 @@ class TemplateParser
 
 
     _brackets_substitution = (render, key, value) ->
-    ###
+        ###
         Private static method which replaces within passed @render text all {{ @key[.subval[]] }} injections by @value
-    ###
+        ###
         re = new RegExp "\{\{\ *#{key}.*?\}\}"
         results = []
         (()->
@@ -73,9 +73,9 @@ class TemplateParser
 
 
     render: (object)->
-    ###
+        ###
         Method injects context which is passed within @object into initiated @this.html code
-    ###
+        ###
         render = "#{@html}"
         keys = $.map(object, (el, key)->return [key])
         render = _for_in(render, object)
@@ -93,29 +93,40 @@ chrome.runtime.onInstalled.addListener ()->
             title: "Inspect element style",
             id: "chromeExtCssPickerContextMenuInspectorItem",
             contexts: ["all"]
-    chrome.contextMenus.onClicked.addListener (info, tab) ->
-        if info.menuItemId == "chromeExtCssPickerContextMenuInspectorItem"
-            console.log 'Inspecting element: ', arguments
-            chrome.tabs.query {active: yes, currentWindow: yes}, (tabs) ->
-                tabId = tabs[0].id
-                chrome.tabs.sendMessage tabId,
-                    {
+
+    chrome.runtime.onConnect.addListener (port) ->
+        if port.name is message_bus_uuid
+            console.log "Extension initiated: ", port
+            sendRequest = ((csrf)->
+                return (args)->
+                    args.csrf = csrf
+                    return port.postMessage args
+            )(message_bus_uuid)
+            chrome.contextMenus.onClicked.addListener (info, tab) ->
+                if info.menuItemId == "chromeExtCssPickerContextMenuInspectorItem"
+                    console.log 'Inspecting element: ', arguments
+                    sendRequest
                         message: 'inspectWithContextMenu'
-                        csrf: message_bus_uuid
-                    },
-                    (response) ->
-                        console.log response
-                        if response.message == "loadTemplate"
-                            loadTemplate(response.name).done (html)->
-                                templateParser = new TemplateParser html
-                                chrome.tabs.sendMessage tabId,
-                                    message: 'loadTemplate'
-                                    name: response.name
-                                    csrf: message_bus_uuid
-                                    data: templateParser.render(data: response.data)
-                                , (response) ->
-                                    console.log 'After template\'s loaded'
-        return
+                return
+            port.onMessage.addListener (request)->
+                if request.csrf == message_bus_uuid
+                    if request.message is "loadTemplate"
+                        loadTemplate(request.name).done (html)->
+                            templateParser = new TemplateParser html
+                            sendRequest
+                                message: 'loadTemplate'
+                                name: request.name
+                                data: templateParser.render(data: request.data)
+                    if request.message is "loadExternalAsset"
+                        xhr = new XMLHttpRequest()
+                        xhr.open "GET", request.url, yes
+                        xhr.onreadystatechange = ()->
+                            if xhr.readyState is 4
+                                sendRequest
+                                    message: "loadExternalAsset"
+                                    data: xhr.responseText
+                        xhr.send()
+
 
 loadTemplate = (template_name)->
     $.ajax

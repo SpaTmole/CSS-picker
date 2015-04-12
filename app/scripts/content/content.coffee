@@ -18,7 +18,7 @@ class StyleParser
                 console.error "Invalid selector: ", selector, " from ", {selector: css_selector}
         return no
 
-    fetchStyleSheetRules: ->
+    fetchStyleSheetRules: (sendRequest)->
         straightFetch = (rule, media="all") =>
             if rule.selectorText? and @matchElement rule.selectorText
                 own_rule =
@@ -34,6 +34,8 @@ class StyleParser
             if sheet.cssRules?
                 for rule in sheet.cssRules
                     straightFetch rule
+            else if sheet.href
+                sendRequest url: sheet.href, message: 'loadExternalAsset'
         return @
 
     getCustomStyles: ->
@@ -57,8 +59,8 @@ class StyleParser
                 result[name] = @removeIndentation value
         result
 
-    invoke: ()->
-        @getCustomStyles().fetchStyleSheetRules()
+    invoke: (sendRequest)->
+        @getCustomStyles().fetchStyleSheetRules(sendRequest)
         element: @pretifyElement()
         styles: @styles
         attributes: @attributes
@@ -122,19 +124,24 @@ class TemplateHandler
 $(document).ready ()->
     parser = null
     result = null
+    message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
     viewController = new TemplateHandler()
-    chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
-        message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
+    port = chrome.runtime.connect name: message_bus_uuid
+    sendRequest = ((csrf)->
+        return (args)->
+            args.csrf = csrf
+            return port.postMessage args
+    )(message_bus_uuid)
+    port.onMessage.addListener (request) ->
         if request.csrf == message_bus_uuid
             if request.message == "inspectWithContextMenu"
                 console.log 'Data Recieved: ', request.data
-                result = parser.invoke()
+                result = parser.invoke(sendRequest)
                 console.log "CSS: ", result
-                sendResponse
+                sendRequest
                     message: "loadTemplate"
                     name: "modal"
                     data: result
-                    csrf: message_bus_uuid
                 return
             if request.message == 'loadTemplate'
                 if request.name == 'modal'
@@ -144,6 +151,8 @@ $(document).ready ()->
                     modal.on('hidden.bs.modal', ()->
                         $(modal).remove()
                     )
+            if request.message is "loadExternalAsset"
+                console.log "External asset loaded", request
 
 
     $(window).on('mousedown', (e)->
