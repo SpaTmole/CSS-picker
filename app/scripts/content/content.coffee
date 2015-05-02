@@ -18,7 +18,7 @@ class StyleParser
                 console.error "Invalid selector: ", selector, " from ", {selector: css_selector}
         return no
 
-    fetchStyleSheetRules: (sendRequest)->
+    fetchStyleSheetRules: (external)->
         straightFetch = (rule, media="all") =>
             if rule.selectorText? and @matchElement rule.selectorText
                 own_rule =
@@ -30,12 +30,23 @@ class StyleParser
                 for _rule in rule.cssRules
                     straightFetch _rule, rule.media.mediaText
 
+        temp_stylesheets = []
         for sheet in document.styleSheets
             if sheet.cssRules?
                 for rule in sheet.cssRules
                     straightFetch rule
             else if sheet.href
-                sendRequest url: sheet.href, message: 'loadExternalAsset'
+                raw_sheet = external.storage[sheet.href] or ''
+                if raw_sheet.length
+                    console.info("Attaching external stylesheet...")
+                    temp_id = "ChromeExtCSSPickerTemporaryExternalResourceAsset_#{temp_stylesheets.length}"
+                    temp_style = $("<style id='#{temp_id}'>" + raw_sheet + '</style>')
+                    temp_style.appendTo($('script').first())
+                    temp_stylesheets.push(temp_style)
+        for stylesheet in temp_stylesheets
+            console.info("...Detaching external stylesheet")
+            $(stylesheet).remove()
+
         return @
 
     getCustomStyles: ->
@@ -59,8 +70,8 @@ class StyleParser
                 result[name] = @removeIndentation value
         result
 
-    invoke: (sendRequest)->
-        @getCustomStyles().fetchStyleSheetRules(sendRequest)
+    invoke: (external)->
+        @getCustomStyles().fetchStyleSheetRules(external)
         element: @pretifyElement()
         styles: @styles
         attributes: @attributes
@@ -121,6 +132,13 @@ class TemplateHandler
         delete @templates[name]
 
 
+class ExternalResourceKeeper
+    constructor: (delegate_request)->
+        @storage = {}
+        for sheet in document.styleSheets
+            if !sheet.cssRules and sheet.href
+                delegate_request url: sheet.href, message: 'loadExternalAsset'
+
 $(document).ready ()->
     parser = null
     result = null
@@ -132,11 +150,12 @@ $(document).ready ()->
             args.csrf = csrf
             return port.postMessage args
     )(message_bus_uuid)
+    external_resources = new ExternalResourceKeeper(sendRequest)
     port.onMessage.addListener (request) ->
         if request.csrf == message_bus_uuid
             if request.message == "inspectWithContextMenu"
                 console.log 'Data Recieved: ', request.data
-                result = parser.invoke(sendRequest)
+                result = parser.invoke(external_resources)
                 console.log "CSS: ", result
                 sendRequest
                     message: "loadTemplate"
@@ -153,6 +172,8 @@ $(document).ready ()->
                     )
             if request.message is "loadExternalAsset"
                 console.log "External asset loaded", request
+                external_resources.storage[request.url] = request.data
+
 
 
     $(window).on('mousedown', (e)->

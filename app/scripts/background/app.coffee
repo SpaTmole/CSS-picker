@@ -11,13 +11,14 @@ class TemplateParser
         by values kept in @object which are expected to be iterable.
         ###
         result = render
-        re = /\{%\s*?for\s+?.+?\s+?in\s+?.+?\s*?%}(.|\n)*?\{%\s*?endfor\s*?%}/gim
+        for_endfor_re = /\{%\s*?for\s+?.+?\s+?in\s+?.+?\s*?%}(.|\n)*?\{%\s*?endfor\s*?%}/gim
+        for_in_re = /\{%\s*?for\s+?.+?\s+?in\s+?.+?\s*?%}/
         keys = $.map(object, (el, key)->return [key])
 
-        matches = render.match(re) or []
+        matches = render.match(for_endfor_re) or []
         for match in matches
             loop_render = ""
-            for_in = match.match(/\{%\s*?for\s+?.+?\s+?in\s+?.+?\s*?%}/).shift()
+            for_in = match.match(for_in_re).shift()
             tokens = for_in.replace(/\{%\s*for\s*/, '').replace(/\s*%}.*/, '').replace(/\s+/, ' ').split(' in ')
             iterable_key = tokens[1].split('.')[0]
             if iterable_key in keys
@@ -119,12 +120,14 @@ chrome.runtime.onInstalled.addListener ()->
                                 data: templateParser.render(data: request.data)
                     if request.message is "loadExternalAsset"
                         xhr = new XMLHttpRequest()
-                        xhr.open "GET", request.url, yes
+                        url = request.url
+                        xhr.open "GET", url, yes
                         xhr.onreadystatechange = ()->
                             if xhr.readyState is 4
                                 sendRequest
                                     message: "loadExternalAsset"
                                     data: xhr.responseText
+                                    url: url
                         xhr.send()
 
 
