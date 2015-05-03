@@ -190,4 +190,28 @@ textarea{
         width: 900px;
       }
     }
+
+    //Custom Sizing
+    .modal-dialog{
+        height: 100%;
+        width: 95%;
+        .modal-content{
+            height: 80%;
+            position: relative;
+            .modal-body{
+              overflow-y: auto;
+              height: 70%;
+              position: relative;
+              .ext-col1, .ext-col2{
+                position: absolute;
+                top: 0;
+                width: 50%;
+                right: 0;
+                &.ext-col1{
+                  left: 0;
+                }
+              }
+            }
+        }
+    }
 }

@@ -41,8 +41,15 @@ class StyleParser
                     console.info("Attaching external stylesheet...")
                     temp_id = "ChromeExtCSSPickerTemporaryExternalResourceAsset_#{temp_stylesheets.length}"
                     temp_style = $("<style id='#{temp_id}'>" + raw_sheet + '</style>')
-                    temp_style.appendTo($('script').first())
+                    temp_style.insertAfter($('script').first())
                     temp_stylesheets.push(temp_style)
+            sheet.extCSSPickerAdvancedPropVisited = true
+
+        for sheet in document.styleSheets
+            if sheet.cssRules? and !sheet.extCSSPickerAdvancedPropVisited
+                for rule in sheet.cssRules
+                    straightFetch rule
+            sheet.extCSSPickerAdvancedPropVisited = false
         for stylesheet in temp_stylesheets
             console.info("...Detaching external stylesheet")
             $(stylesheet).remove()

@@ -10,17 +10,20 @@ class TemplateParser
         Classmethod joins all rules into one sheet and returns them grouped by media
         ###
         res = all: {}
+        res['all'][object.element] = {}
         re_important = /.*!\s*important/i
         for rule in object.rules
             if !res[rule.media]
                 res[rule.media] = {}
-            for prop in rule.properties
-                if !res[rule.media][prop] or !res[rule.media][prop].match(re_important) or rule.properties[prop].match(re_important)
-                    res[rule.media][prop] = rule.properties[prop]
+            if !res[rule.media][rule.selector]
+                res[rule.media][rule.selector] = {}
+            for prop of rule.properties
+                if !res[rule.media][rule.selector][prop] or !res[rule.media][rule.selector][prop].match(re_important) or rule.properties[prop].match(re_important)
+                    res[rule.media][rule.selector][prop] = rule.properties[prop]
 
         for style of object.styles
-            if !res['all'][style] or !res['all'][style].match(re_important) or object.styles[style].match(re_important)
-                res['all'][style] = object.styles[style]
+            if !res['all'][object.element][style] or !res['all'][object.element][style].match(re_important) or object.styles[style].match(re_important)
+                res['all'][object.element][style] = object.styles[style]
         res
 
     render: (object)->
@@ -53,13 +56,21 @@ class TemplateParser
             ul_rules.append(li)
         col1.append(ul_styles).append(ul_attrs).append(ul_rules)
 
-        final_list_of_rules = @prepareFinal(object)   # TODO: Doesn't work properly!!!
+        final_list_of_rules = @prepareFinal(object)
         col2.append $("<h3>Final list of statements:</h3>")
         ul_statements = $("<ul class='ext-final-statements'></ul>")
+        # TODO: Add tabs with selector as :hover, :active, etc. and All
+        # TODO: Separate each selector until object.element, remove excess parts, as comma separated values before and after
+        # TODO: Add preview.
         for media of final_list_of_rules
             ul_content_rules = $("<ul></ul>")
-            for rule of final_list_of_rules[media]
-                ul_content_rules.append $("<li><b>#{rule}: </b><span>#{final_list_of_rules[media][rule]}</span></li>")
+            for selector of final_list_of_rules[media]
+                selector_li = $("<li></li>")
+                selector_li.append $("<p>#{selector} {</p>")
+                for rule of final_list_of_rules[media][selector]
+                    selector_li.append $("<p><b>#{rule}: </b><span>#{final_list_of_rules[media][selector][rule]};</span></p>")
+                selector_li.append $("<p>}</p>")
+                ul_content_rules.append selector_li
             ul_statements.append("<p>@media #{media} {</p>").append(ul_content_rules).append("<p>}</p>")
         col2.append ul_statements
         render.find('.modal-body').append(col1).append(col2)
