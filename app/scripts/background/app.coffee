@@ -10,7 +10,6 @@ class TemplateParser
         Classmethod joins all rules into one sheet and returns them grouped by media
         ###
         res = all: {}
-        res['all'][object.element] = {}
         re_important = /.*!\s*important/i
         for rule in object.rules
             if !res[rule.media]
@@ -22,9 +21,95 @@ class TemplateParser
                     res[rule.media][rule.selector][prop] = rule.properties[prop]
 
         for style of object.styles
+            res['all'][object.element] = res['all'][object.element] or {}
             if !res['all'][object.element][style] or !res['all'][object.element][style].match(re_important) or object.styles[style].match(re_important)
                 res['all'][object.element][style] = object.styles[style]
         res
+
+    _splitBySelectorProps = (selectors, elem) ->
+        ###
+        Private function receives list of CSS props grouped by media and selectors, returns list of those props
+        grouped by :selector_attrs
+        ###
+        res = {}
+        source_classes = elem.split '.'
+        _match_q = (selector)->
+            ###
+            Function matches if source element's class-queue might be nested with given selector.
+            ###
+            selector_class_q = selector.replace(/:.*/gi, '').split '.'
+            #TODO: Beware of hidden bug: a.not(:hover).class.queue.continues
+            #TODO: Here is example how to exclude such patterns (needed to adjust): http://stackoverflow.com/questions/2078915/a-regular-expression-to-exclude-a-word-string
+
+            if !selector_class_q[0]
+                selector_class_q.shift()
+            else if selector_class_q[0] isnt source_classes[0]
+                return no
+            for token in selector_class_q
+                if source_classes.indexOf(token) is -1
+                    return no
+            return yes
+
+        for media of selectors
+            for selector of selectors[media]
+                for sub_s in selector.replace(/\s*?,\s*?/img, ',').split ","
+                    sub_s = sub_s.replace(/(\+|~|>)/g, '').replace(/.*\s+/g, '')
+                    if _match_q(sub_s)
+                        final = sub_s.split(':').pop()
+                        res[final] = res[final] or {}
+                        to_update = {}
+                        to_update[media] = {}
+                        to_update[media][sub_s] = selectors[media][selector]
+                        $.extend yes, res[final], to_update
+        res
+
+    renderFinal: (data, append_to)->
+        ###
+        Function-helper, which wraps data into tabs, splits by selectors and eventually appends to received elem;
+        ###
+        final_list_of_rules = @prepareFinal(data)
+        grouped = _splitBySelectorProps(final_list_of_rules, data.element)
+        append_to.append $("<h3>Final list of statements:</h3>")
+
+        ul_navbar = $('<ul class="nav nav-tabs" role="tablist"></ul>')
+        li_all = $('<li class="active" role="presentation"></li>')
+        li_all.append $('<a href="#ext-CSSPicker-all" aria-controls="ext-CSSPicker-all" role="tab" data-toggle="tab">All</a>')
+        ul_navbar.append li_all
+
+        # -------------
+        ul_statements = $("<ul class='ext-final-statements tab-content'></ul>")
+        # TODO: Add preview.
+        li_all = $('<li class="tab-pane active" id="ext-CSSPicker-all" role="tabpanel"></li>')
+        for media of final_list_of_rules
+            ul_content_rules = $("<ul></ul>")
+            for selector of final_list_of_rules[media]
+                selector_li = $("<li></li>")
+                selector_li.append $("<p>#{selector} {</p>")
+                for rule of final_list_of_rules[media][selector]
+                    selector_li.append $("<p><b>#{rule}: </b><span>#{final_list_of_rules[media][selector][rule]};</span></p>")
+                selector_li.append $("<p>}</p>")
+                ul_content_rules.append selector_li
+            li_all.append("<p>@media #{media} {</p>").append(ul_content_rules).append("<p>}</p>")
+        ul_statements.append li_all
+        for sel_class of grouped
+            a_nav = $('<a href="#ext-CSSPicker-' +
+                sel_class + '" aria-controls="ext-CSSPicker-' + sel_class + '" role="tab" data-toggle="tab">' +
+                sel_class + '</a>')
+            a_nav.wrap('<li role="presentation"></li>')
+            ul_navbar.append a_nav.parent()
+            li_tabpanel = $('<li role="tabpanel" class="tab-pane" id="ext-CSSPicker-' + sel_class + '"></li>')
+            for media of grouped[sel_class]
+                li_tabpanel.append $("<p>@media " + media + " {</p>")
+                for media_sel of grouped[sel_class][media]
+                    li_tabpanel.append $("<p class='ext-padded'>" + media_sel + "{</p>")
+                    for sel_prop of grouped[sel_class][media][media_sel]
+                        li_tabpanel.append $("<p class='ext-padded'><p class='ext-padded'>" +
+                            "<b>" + sel_prop + ": </b>" + "<span>" + grouped[sel_class][media][media_sel][sel_prop] +
+                            "</span></p></p>")
+            ul_statements.append li_tabpanel
+        append_to.append ul_navbar
+        append_to.append ul_statements
+        return
 
     render: (object)->
         ###
@@ -55,24 +140,7 @@ class TemplateParser
             li.append(header).append(body)
             ul_rules.append(li)
         col1.append(ul_styles).append(ul_attrs).append(ul_rules)
-
-        final_list_of_rules = @prepareFinal(object)
-        col2.append $("<h3>Final list of statements:</h3>")
-        ul_statements = $("<ul class='ext-final-statements'></ul>")
-        # TODO: Add tabs with selector as :hover, :active, etc. and All
-        # TODO: Separate each selector until object.element, remove excess parts, as comma separated values before and after
-        # TODO: Add preview.
-        for media of final_list_of_rules
-            ul_content_rules = $("<ul></ul>")
-            for selector of final_list_of_rules[media]
-                selector_li = $("<li></li>")
-                selector_li.append $("<p>#{selector} {</p>")
-                for rule of final_list_of_rules[media][selector]
-                    selector_li.append $("<p><b>#{rule}: </b><span>#{final_list_of_rules[media][selector][rule]};</span></p>")
-                selector_li.append $("<p>}</p>")
-                ul_content_rules.append selector_li
-            ul_statements.append("<p>@media #{media} {</p>").append(ul_content_rules).append("<p>}</p>")
-        col2.append ul_statements
+        @renderFinal(object, col2)
         render.find('.modal-body').append(col1).append(col2)
 
         render.wrap('<p></p>').parent().html()
