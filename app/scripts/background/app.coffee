@@ -105,7 +105,9 @@ class TemplateParser
                     for sel_prop of grouped[sel_class][media][media_sel]
                         li_tabpanel.append $("<p class='ext-padded'><p class='ext-padded'>" +
                             "<b>" + sel_prop + ": </b>" + "<span>" + grouped[sel_class][media][media_sel][sel_prop] +
-                            "</span></p></p>")
+                            ";</span></p></p>")
+                    li_tabpanel.append $("<p class='ext-padded'>}</p>")
+                li_tabpanel.append $("<p>}</p>")
             ul_statements.append li_tabpanel
         append_to.append ul_navbar
         append_to.append ul_statements
