@@ -31,20 +31,22 @@ class StyleParser
                     straightFetch _rule, rule.media.mediaText
 
         temp_stylesheets = []
+        parsed_external_sheets = []
         for sheet in document.styleSheets
             if sheet.cssRules?
                 for rule in sheet.cssRules
                     straightFetch rule
-            else if sheet.href
+            else if sheet.href and !(sheet.href in parsed_external_sheets)
                 raw_sheet = external.storage[sheet.href] or ''
                 if raw_sheet.length
-                    console.info("Attaching external stylesheet...")
                     temp_id = "ChromeExtCSSPickerTemporaryExternalResourceAsset_#{temp_stylesheets.length}"
                     temp_style = $("<style id='#{temp_id}'>" + raw_sheet + '</style>')
-                    temp_style.insertAfter($('script').first())
                     temp_stylesheets.push(temp_style)
+                    parsed_external_sheets.push sheet.href
             sheet.extCSSPickerAdvancedPropVisited = true
-
+        for stylesheet in temp_stylesheets
+            console.info("Attaching external stylesheet...")
+            $(stylesheet).insertAfter $('script').first()
         for sheet in document.styleSheets
             if sheet.cssRules? and !sheet.extCSSPickerAdvancedPropVisited
                 for rule in sheet.cssRules
