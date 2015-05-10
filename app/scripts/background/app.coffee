@@ -92,12 +92,13 @@ class TemplateParser
             li_all.append("<p>@media #{media} {</p>").append(ul_content_rules).append("<p>}</p>")
         ul_statements.append li_all
         for sel_class of grouped
+            sel_class_safe = sel_class.replace ".", "class-"
             a_nav = $('<a href="#ext-CSSPicker-' +
-                sel_class + '" aria-controls="ext-CSSPicker-' + sel_class + '" role="tab" data-toggle="tab">' +
+                sel_class_safe + '" aria-controls="ext-CSSPicker-' + sel_class_safe + '" role="tab" data-toggle="tab">' +
                 sel_class + '</a>')
             a_nav.wrap('<li role="presentation"></li>')
             ul_navbar.append a_nav.parent()
-            li_tabpanel = $('<li role="tabpanel" class="tab-pane" id="ext-CSSPicker-' + sel_class + '"></li>')
+            li_tabpanel = $('<li role="tabpanel" class="tab-pane" id="ext-CSSPicker-' + sel_class_safe + '"></li>')
             for media of grouped[sel_class]
                 li_tabpanel.append $("<p>@media " + media + " {</p>")
                 for media_sel of grouped[sel_class][media]
@@ -119,7 +120,7 @@ class TemplateParser
         ###
         render = $(@html)
         object = object.data
-        render.find('.modal-header .dom-element').html(object.element)
+        render.find('.modal-header .dom-element').html @wrapClasses object.element
         col1 = $("<div class='ext-col1'></div>")
         col2 = $("<div class='ext-col2'></div>")
         ul_styles = $("<ul class='ext-styles'></ul>")
@@ -141,12 +142,28 @@ class TemplateParser
                 body.append $("<li><div class='ext-css-rule-prop-key'>#{prop}: </div><div class='ext-css-rule-prop-val'>#{rule.properties[prop]}</div></li>")
             li.append(header).append(body)
             ul_rules.append(li)
-        col1.append(ul_styles).append(ul_attrs).append(ul_rules)
+        if ul_styles.children().length
+             col1.append("<h3>Styles:</h3>").append(ul_styles)
+        if ul_attrs.children().length
+             col1.append("<h3>Attributes:</h3>").append(ul_attrs)
+        if ul_rules.children().length
+             col1.append("<h3>CSS Rules:</h3>").append(ul_rules)
         @renderFinal(object, col2)
         render.find('.modal-body').append(col1).append(col2)
-
         render.wrap('<p></p>').parent().html()
 
+    wrapClasses: (string)->
+        res = $('<p></p>')
+        string = string.split "."
+        $.each(string, (ind, token)->
+            if !ind
+                res.append $("<strong>#{token}</strong>")
+            else
+                res.append $("<i>#{token}</i>")
+            if ind isnt string.length - 1
+                res.append "."
+        )
+        res.html()
 
 chrome.runtime.onInstalled.addListener ()->
     message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
