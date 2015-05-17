@@ -6,8 +6,11 @@ class StyleParser
         @attributes = {}
 
     matchElement: (css_selector)->
-        if $(@element)[0] in $(css_selector)
-            return yes
+        try
+            if $(@element)[0] in $(selector)
+                return yes
+        catch wrong_selector
+            console.error "Invalid selector: ", selector, " from ", {selector: css_selector}
         selectors_set = css_selector.split(',')
         for selector in selectors_set
             selector = selector.split(':')[0]
@@ -144,13 +147,17 @@ class TemplateHandler
 class ExternalResourceKeeper
     constructor: (delegate_request)->
         @storage = {}
+        @processing = 0
         for sheet in document.styleSheets
             if !sheet.cssRules and sheet.href
+                @processing += 1
                 delegate_request url: sheet.href, message: 'loadExternalAsset'
 
 $(document).ready ()->
     parser = null
     result = null
+    app_enabled = yes
+    hotkey = ""
     message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
     viewController = new TemplateHandler()
     port = chrome.runtime.connect name: message_bus_uuid
@@ -162,30 +169,45 @@ $(document).ready ()->
     external_resources = new ExternalResourceKeeper(sendRequest)
     port.onMessage.addListener (request) ->
         if request.csrf == message_bus_uuid
-            if request.message == "inspectWithContextMenu"
-                console.log 'Data Recieved: ', request.data
-                result = parser.invoke(external_resources)
-                console.log "CSS: ", result
-                sendRequest
-                    message: "loadTemplate"
-                    name: "modal"
-                    data: result
-                return
-            if request.message == 'loadTemplate'
-                if request.name == 'modal'
-                    viewController.set request.name, request.data
-                    modal = viewController.render(request.name)
-                    modal.modal('show')
-                    modal.on('hidden.bs.modal', ()->
-                        $(modal).remove()
-                    )
-            if request.message is "loadExternalAsset"
-                console.log "External asset loaded", request
-                external_resources.storage[request.url] = request.data
+            if app_enabled
+                if request.message == "inspectWithContextMenu"
+                    console.log 'Data Recieved: ', request.data
+                    if request.data.enabled
+                        result = parser.invoke(external_resources)
+                        console.log "CSS: ", result
+                        sendRequest
+                            message: "loadTemplate"
+                            name: "modal"
+                            data: result
+                    else
+                        app_enabled = no
+                    return
+                if request.message == 'loadTemplate'
+                    if request.name == 'modal'
+                        viewController.set request.name, request.data
+                        modal = viewController.render(request.name)
+                        modal.modal('show')
+                        modal.on('hidden.bs.modal', ()->
+                            $(modal).remove()
+                        )
+                if request.message is "loadExternalAsset"
+                    console.log "External asset loaded", request
+                    external_resources.storage[request.url] = request.data
+                    external_resources.processing -= 1
+                    if !external_resources.processing
+                        sendRequest
+                            message: "enableInspection"
 
+            if request.message is "enableInspection"
+                app_enabled = yes
 
+            if request.message is "disableInspection"
+                app_enabled = no
 
     $(window).on('mousedown', (e)->
-        if e.button is 2
-            parser = new StyleParser e.toElement
+        if app_enabled
+            if e.button is 2
+                parser = new StyleParser e.toElement
     )
+
+    #TODO: Add hotkey handling

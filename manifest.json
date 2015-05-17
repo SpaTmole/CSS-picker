@@ -8,8 +8,8 @@
     "256": "app/images/icon.png"
   },
   "content_scripts": [ {
-    "js": ["lib.min.js", "content.js"],
-    "css": ["content.css"],
+    "js": ["dest/lib.min.js", "dest/content.js"],
+    "css": ["dest/content.css"],
     "matches": [ "*://*/*"]
   }],
   "options_page": "templates/options.html",
@@ -22,7 +22,7 @@
   },
   "background": {
     "persistent": true,
-    "scripts": ["lib.min.js", "app.js"]
+    "scripts": ["dest/lib.min.js", "dest/app.js"]
   },
   "author": "Konstantin Oficerov",
   "permissions": [

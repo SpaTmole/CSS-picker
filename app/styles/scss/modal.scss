@@ -101,6 +101,7 @@ textarea{
       position: relative;
       width: auto;
       margin: 10px;
+      padding: 0;
     }
     .modal-content {
       position: relative;
@@ -203,14 +204,17 @@ textarea{
             color: #CCC;
             .modal-header{
                 height: 5%;
+                min-height: 40px;
                 position: relative;
                 padding: 1% 5px;
                 background: #454545;
                 border-color: #333;
                 button.close {
+                    margin: 0!important;
+                    padding: 1px 6px!important;
                     color: #333;
                     border-radius: 50%;
-                    background: orangered;
+                    background: linear-gradient(0deg, rgb(221, 74, 0) 0%, #ff4500 50%, rgba(255, 170, 142, 0.87) 100%);
                     text-shadow: none;
                     border-color: #333;
                     border-width: 1px;
@@ -220,9 +224,8 @@ textarea{
                         opacity: 1;
                     }
                     &:active, &:focus{
-                        outline-style: dashed;
-                        outline-color: orange;
-                        outline-width: 5px;
+                        outline: none;
+                        background: linear-gradient(180deg, rgb(221, 74, 0) 0%, #ff4500 50%, rgba(255, 170, 142, 0.87) 100%);
                     }
                 }
               .modal-title {
@@ -234,9 +237,11 @@ textarea{
                 position: relative;
                 padding: 1% 15px;
                 .ext-col1, .ext-col2{
+                    border: 1px outset #555;
                     position: absolute;
                     top: 0;
                     max-height: 100%;
+                    min-height: 100%;
                     overflow-x: hidden;
                     overflow-y: auto;
                     width: 50%;
@@ -290,7 +295,18 @@ textarea{
                 padding-left: 10px;
             }
         }
+        li.tab-pane{
+            ul{
+                margin-left: 20px;
+            }
+        }
         ul.ext-final-statements{
+            ul{
+                list-style-type: none;
+            }
+            b{
+                color: #9876aa;
+            }
             li.tab-pane{
                 display: none;
                 &.active{
@@ -299,11 +315,11 @@ textarea{
             }
         }
         ul.nav-tabs{
-            box-shadow: 0 3px 10px #222;
+            border-bottom: 1px outset #555;
             li{
                 display: inline-block;
                 padding: 10px;
-                border-radius: 8px 8px 0 0;
+                border-radius: 5px 5px 0 0;
                 background: linear-gradient(180deg, #555 0%, #444 50%, #333 100%);
                 border: #333 1px solid;
                 a{
@@ -321,11 +337,73 @@ textarea{
                 }
             }
         }
+        ul.tab-content{
+            border-top: 1px outset #555;
+        }
+
     }
 
     .ext-col1{
         &>*{
             padding-left: 5px;
         }
+//        .ext-css-rule-header{
+//            b{
+//                color: #ab6a00;
+//            }
+//            .ext-css-rule-selector{
+//                color: seagreen;
+//            }
+//        }
+        ul{
+            list-style-type: none;
+            &.ext-css-rule-props{
+                margin-left: 20px;
+            }
+        }
+        li{
+            .ext-css-rule-prop-key, .ext-css-rule-prop-val, .ext-attr-name, .ext-attr-value, .ext-style-name, .ext-style-value{
+                display: inline-block;
+            }
+            div+div{
+                margin-left: 5px;
+            }
+            .ext-css-rule-prop-key{
+                color: #9876aa;
+                font-weight: bold;
+            }
+        }
+        .ext-attr-name{
+            color: #ffc66d;
+        }
+        .ext-attr-value{
+            color: #A5C261;
+        }
+
+    }
+    s{
+//        &::after{
+//            content: no-close-quote;
+//        }
+//        &::before{
+//            content: no-open-quote;
+//        }
+        text-decoration: none!important;
+        &.ext-q-hash{
+            color: #6D9CBE;
+        }
+        &.ext-q-number{
+            color: #A5C261;
+        }
+        &.ext-q-special{
+            color: #CC7832;
+        }
+        &.ext-q-fn{
+            color: #ffc66d;
+        }
+        &.ext-q-string{
+            color: #A5C261;
+        }
+
     }
 }

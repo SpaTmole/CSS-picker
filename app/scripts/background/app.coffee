@@ -69,7 +69,7 @@ class TemplateParser
         ###
         final_list_of_rules = @prepareFinal(data)
         grouped = _splitBySelectorProps(final_list_of_rules, data.element)
-        append_to.append $("<h3>Final list of statements:</h3>")
+        append_to.append $("<h3>CSS Rules:</h3>")
 
         ul_navbar = $('<ul class="nav nav-tabs" role="tablist"></ul>')
         li_all = $('<li class="active" role="presentation"></li>')
@@ -84,12 +84,12 @@ class TemplateParser
             ul_content_rules = $("<ul></ul>")
             for selector of final_list_of_rules[media]
                 selector_li = $("<li></li>")
-                selector_li.append $("<p>#{selector} {</p>")
+                selector_li.append $("<p>#{@wrapRuleSelector(selector)} {</p>")
                 for rule of final_list_of_rules[media][selector]
-                    selector_li.append $("<p><b>#{rule}: </b><span>#{final_list_of_rules[media][selector][rule]};</span></p>")
+                    selector_li.append $("<p><b>#{rule}: </b><span>#{@wrapRuleValue(final_list_of_rules[media][selector][rule])};</span></p>")
                 selector_li.append $("<p>}</p>")
                 ul_content_rules.append selector_li
-            li_all.append("<p>@media #{media} {</p>").append(ul_content_rules).append("<p>}</p>")
+            li_all.append("<p><s class='ext-q-special'>@media</s> #{media} {</p>").append(ul_content_rules).append("<p>}</p>")
         ul_statements.append li_all
         for sel_class of grouped
             sel_class_safe = sel_class.replace ".", "class-"
@@ -100,12 +100,12 @@ class TemplateParser
             ul_navbar.append a_nav.parent()
             li_tabpanel = $('<li role="tabpanel" class="tab-pane" id="ext-CSSPicker-' + sel_class_safe + '"></li>')
             for media of grouped[sel_class]
-                li_tabpanel.append $("<p>@media " + media + " {</p>")
+                li_tabpanel.append $("<p><s class='ext-q-special'>@media</s> " + media + " {</p>")
                 for media_sel of grouped[sel_class][media]
-                    li_tabpanel.append $("<p class='ext-padded'>" + media_sel + "{</p>")
+                    li_tabpanel.append $("<p class='ext-padded'>" + @wrapRuleSelector(media_sel) + "{</p>")
                     for sel_prop of grouped[sel_class][media][media_sel]
                         li_tabpanel.append $("<p class='ext-padded'><p class='ext-padded'>" +
-                            "<b>" + sel_prop + ": </b>" + "<span>" + grouped[sel_class][media][media_sel][sel_prop] +
+                            "<b>" + sel_prop + ": </b>" + "<span>" + @wrapRuleValue(grouped[sel_class][media][media_sel][sel_prop]) +
                             ";</span></p></p>")
                     li_tabpanel.append $("<p class='ext-padded'>}</p>")
                 li_tabpanel.append $("<p>}</p>")
@@ -127,30 +127,30 @@ class TemplateParser
         ul_attrs = $("<ul class='ext-attrs'></ul>")
         ul_rules = $("<ul class='ext-rules'></ul>")
         for style of object.styles
-            ul_styles.append $("<li class='ext-style'><span class='ext-style-name'>#{style}: </span><span class='ext-style-value'>#{object.styles[style]}</span></li>")
+            ul_styles.append $("<li class='ext-style'><div class='ext-style-name'>#{style}: </div><div class='ext-style-value'>#{object.styles[style]}</div></li>")
 
         for attr of object.attributes
-            ul_attrs.append $("<li class='ext-attribute'><span class='ext-attr-name'>#{attr}: </span><span class='ext-attr-value'>#{object.attributes[attr]}</span></li>")
+            ul_attrs.append $("<li class='ext-attribute'><div class='ext-attr-name'>#{attr}: </div><div class='ext-attr-value'>#{object.attributes[attr]}</div></li>")
 
-        for rule in object.rules
-            li = $('<li class="ext-css-rule"></li>')
-            header = $("<div class='ext-css-rule-header'></div>")
-            header.append $("<div><b>Media: </b><span>#{rule.media}</span></div>")
-            header.append $("<div class='ext-css-rule-selector' title=\'#{rule.selector}\'>#{rule.selector}</div>")
-            body = $("<ul class='ext-css-rule-props'></ul>")
-            for prop of rule.properties
-                body.append $("<li><div class='ext-css-rule-prop-key'>#{prop}: </div><div class='ext-css-rule-prop-val'>#{rule.properties[prop]}</div></li>")
-            li.append(header).append(body)
-            ul_rules.append(li)
+#        for rule in object.rules
+#            li = $('<li class="ext-css-rule"></li>')
+#            header = $("<div class='ext-css-rule-header'></div>")
+#            header.append $("<div><b>Media: </b><span>#{rule.media}</span></div>")
+#            header.append $("<div class='ext-css-rule-selector' title=\'#{rule.selector}\'>#{rule.selector}</div>")
+#            body = $("<ul class='ext-css-rule-props'></ul>")
+#            for prop of rule.properties
+#                body.append $("<li><div class='ext-css-rule-prop-key'>#{prop}: </div><div class='ext-css-rule-prop-val'>#{rule.properties[prop]}</div></li>")
+#            li.append(header).append(body)
+#            ul_rules.append(li)
         if ul_styles.children().length
              col1.append("<h3>Styles:</h3>").append(ul_styles)
         if ul_attrs.children().length
              col1.append("<h3>Attributes:</h3>").append(ul_attrs)
-        if ul_rules.children().length
-             col1.append("<h3>CSS Rules:</h3>").append(ul_rules)
+#        if ul_rules.children().length
+#             col1.append("<h3>CSS Rules:</h3>").append(ul_rules)
         @renderFinal(object, col2)
         render.find('.modal-body').append(col1).append(col2)
-        render.wrap('<p></p>').parent().html()
+        @postProduction render.wrap('<p></p>').parent().html()
 
     wrapClasses: (string)->
         res = $('<p></p>')
@@ -165,16 +165,81 @@ class TemplateParser
         )
         res.html()
 
+    wrapper = (list, cls, _rule)->
+        if list and list.length
+            for match in list
+                _rule = _rule.replace(new RegExp(match), "<s class='#{cls}'>#{match}</s>")
+        _rule
+
+    html_tags = [
+        "a", "abbr","acronym","address","applet","area","article","aside","audio","b","base","basefont","bdi","bdo","big","blockquote","body","br","button","canvas","caption","center","cite","code","col","colgroup","datalist","dd","del","details","dfn","dialog","dir","div","dl","dt","em","embed","fieldset","figcaption","figure","font","footer","form","frame","frameset","h1> - <h6","head","header","hr","html","i","iframe","img","input","ins","kbd","keygen","label","legend","li","link","main","map","mark","menu","menuitem","meta","meter","nav","noframes","noscript","object","ol","optgroup","option","output","p","param","pre","progress","q","rp","rt","ruby","s","samp","script","section","select","small","source","span","strike","strong","style","sub","summary","sup","table","tbody","td","textarea","tfoot","th","thead","time","title","tr","track","tt","u","ul","var","video","wbr",
+    ]
+
+    wrapRuleValue: (rule) ->
+        rule = wrapper(rule.match(/'.*?'/g), "ext-q-string", rule)
+        rule = wrapper(rule.match(/".*?"/g), "ext-q-string", rule)
+        rule = wrapper(rule.match(/[a-zA-Z]+?(?=\()/g), "ext-q-fn", rule)
+        rule = wrapper(rule.match(/#[0-9a-fA-F]+/g), "ext-q-hash", rule)
+#        rule = wrapper(rule.match(/([0-9]+)?/g), "ext-q-number", rule)  #TODO: To laggy
+        rule = wrapper(rule.match(/\![a-zA-Z]+/g), "ext-q-special", rule)
+        rule
+
+    wrapRuleSelector: (selector) ->
+        # TODO: Some issues appears...
+        wrapHTMLTag = (str)->
+            matches = str.match(/^([a-zA-Z])+/) or []
+            if matches.length
+                str = str.replace matches[0], "<s class='ext-q-media'>#{matches[0]}</s>"
+            str
+
+        $.each ['&','>','~','+',' ','('], (_i, symb)->
+            sub_sel = selector.split symb
+            $.each sub_sel, (_i2, sub_splited)->
+                sub_sel[_i2] = wrapHTMLTag(sub_splited)
+            selector = sub_sel.join symb
+#        selector = wrapper(selector.match(/'.*?'/g), "ext-q-string", selector)
+#        selector = wrapper(selector.match(/".*?"/g), "ext-q-string", selector)
+
+
+        wrapper(selector.match(/[a-zA-Z0-9-_#]+(?=[^<>]*(?:<[^<>]*>[^<>]*)*$)/g), "ext-q-fn", selector)
+
+
+    postProduction: (html)->
+        html = html.replace(/;/g, "<s class='ext-q-special'>;</s>").replace(/\*/g, "<s class='ext-q-special'>*</s>")
+        .replace(/\+/g, "<s class='ext-q-special'>+</s>").replace(/~/, "<s class='ext-q-special'>~</s>")
+        html
+
 chrome.runtime.onInstalled.addListener ()->
     message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
+    context_menu_guid = "chromeExtCssPickerContextMenuInspectorItem"
+    app_enabled = localStorage.getItem("#{message_bus_uuid}-enabled") or yes
+    app_hotkey_inspection = localStorage.getItem("#{message_bus_uuid}-hotkey") or ""
     chrome.contextMenus.create
-            title: "Inspect element style",
-            id: "chromeExtCssPickerContextMenuInspectorItem",
+            title: "Inspect element style (Loading ...)",
+            enabled: no
+            id: context_menu_guid,
             contexts: ["all"]
+
+    disableMenu = () ->
+        chrome.contextMenus.update context_menu_guid,
+            enabled: no
+            title: "Inspector disabled"
+
+    enableMenu = () ->
+        chrome.contextMenus.update context_menu_guid,
+            enabled: yes
+            title: "Inspect element style"
+
+    ports = []
+    broadcastData = (data) ->
+        for port in ports
+            data.csrf = message_bus_uuid
+            port.postMessage data
 
     chrome.runtime.onConnect.addListener (port) ->
         if port.name is message_bus_uuid
             console.log "Extension initiated: ", port
+            ports.push(port);
             sendRequest = ((csrf)->
                 return (args)->
                     args.csrf = csrf
@@ -185,27 +250,50 @@ chrome.runtime.onInstalled.addListener ()->
                     console.log 'Inspecting element: ', arguments
                     sendRequest
                         message: 'inspectWithContextMenu'
+                        data:
+                            enabled: app_enabled
+                            hotkey: app_hotkey_inspection
                 return
             port.onMessage.addListener (request)->
                 if request.csrf == message_bus_uuid
-                    if request.message is "loadTemplate"
-                        loadTemplate(request.name).done (html)->
-                            templateParser = new TemplateParser html
-                            sendRequest
-                                message: 'loadTemplate'
-                                name: request.name
-                                data: templateParser.render(data: request.data)
-                    if request.message is "loadExternalAsset"
-                        xhr = new XMLHttpRequest()
-                        url = request.url
-                        xhr.open "GET", url, yes
-                        xhr.onreadystatechange = ()->
-                            if xhr.readyState is 4
+                    if app_enabled
+                        if request.message is "loadTemplate"
+                            loadTemplate(request.name).done (html)->
+                                templateParser = new TemplateParser html
                                 sendRequest
-                                    message: "loadExternalAsset"
-                                    data: xhr.responseText
-                                    url: url
-                        xhr.send()
+                                    message: 'loadTemplate'
+                                    name: request.name
+                                    data: templateParser.render(data: request.data)
+                        if request.message is "loadExternalAsset"
+                            xhr = new XMLHttpRequest()
+                            url = request.url
+                            xhr.open "GET", url, yes
+                            xhr.onreadystatechange = ()->
+                                if xhr.readyState is 4
+                                    sendRequest
+                                        message: "loadExternalAsset"
+                                        data: xhr.responseText
+                                        url: url
+                            xhr.send()
+
+                    if request.message is "disableInspection"
+                        disableMenu()
+                        localStorage.setItem "#{message_bus_uuid}-enabled", no
+                        app_enabled = no
+                        broadcastData
+                            message: request.message
+
+                    if request.message is "enableInspection"
+                        enableMenu()
+                        localStorage.setItem "#{message_bus_uuid}-enabled", yes
+                        app_enabled = yes
+                        broadcastData
+                            message: request.message
+
+                    if request.message is "appStatus"
+                        sendRequest
+                            message: request.message
+                            data: app_enabled
 
 
 loadTemplate = (template_name)->
