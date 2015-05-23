@@ -127,7 +127,7 @@ class TemplateParser
         ul_attrs = $("<ul class='ext-attrs'></ul>")
         ul_rules = $("<ul class='ext-rules'></ul>")
         for style of object.styles
-            ul_styles.append $("<li class='ext-style'><div class='ext-style-name'>#{style}: </div><div class='ext-style-value'>#{object.styles[style]}</div></li>")
+            ul_styles.append $("<li class='ext-style'><div class='ext-style-name'>#{style}: </div><div class='ext-style-value'>#{@wrapRuleValue object.styles[style]}</div></li>")
 
         for attr of object.attributes
             ul_attrs.append $("<li class='ext-attribute'><div class='ext-attr-name'>#{attr}: </div><div class='ext-attr-value'>#{object.attributes[attr]}</div></li>")
@@ -176,33 +176,27 @@ class TemplateParser
     ]
 
     wrapRuleValue: (rule) ->
-        rule = wrapper(rule.match(/'.*?'/g), "ext-q-string", rule)
-        rule = wrapper(rule.match(/".*?"/g), "ext-q-string", rule)
-        rule = wrapper(rule.match(/[a-zA-Z]+?(?=\()/g), "ext-q-fn", rule)
-        rule = wrapper(rule.match(/#[0-9a-fA-F]+/g), "ext-q-hash", rule)
+        rule = rule.replace /('.*?')/g, "<s class='ext-q-string'>$1</s>"
+        rule = rule.replace /(".*?")/g, "<s class='ext-q-string'>$1</s>"
+        rule = rule.replace /([a-zA-Z]+)?(?=\()/g, "<s class='ext-q-fn'>$1</s>"
+        rule = rule.replace /(#[0-9a-fA-F]+)/g, "<s class='ext-q-hash'>$1</s>"
 #        rule = wrapper(rule.match(/([0-9]+)?/g), "ext-q-number", rule)  #TODO: To laggy
-        rule = wrapper(rule.match(/\![a-zA-Z]+/g), "ext-q-special", rule)
+        rule = rule.replace /(\![a-zA-Z]+)/g, "<s class='ext-q-special'>$1</s>"
         rule
 
     wrapRuleSelector: (selector) ->
-        # TODO: Some issues appears...
+        selector = selector.replace /('.*?')/g, "<s class='ext-q-string'>$1</s>"
+        selector = selector.replace /(".*?")(?=[^<>]*(?:<[^<>]*>[^<>]*)*$)/g, "<s class='ext-q-string'>$1</s>"
         wrapHTMLTag = (str)->
-            matches = str.match(/^([a-zA-Z])+/) or []
-            if matches.length
-                str = str.replace matches[0], "<s class='ext-q-media'>#{matches[0]}</s>"
-            str
+            tag_re = /(\.?#?[a-zA-Z\-_]+)(?=[^<>]*(?:<[^<>]*>[^<>]*)*$)/g
+            matches = str.match(tag_re) or []
+            str = str.replace tag_re, "\r$1\r"
+            $.each matches, (_i, match)->
+                if match in html_tags
+                    str = str.replace new RegExp("\r#{match}\r", "g"), "<s class='ext-q-special'>#{match}</s>"
+            str.replace /\r/g, ''
 
-        $.each ['&','>','~','+',' ','('], (_i, symb)->
-            sub_sel = selector.split symb
-            $.each sub_sel, (_i2, sub_splited)->
-                sub_sel[_i2] = wrapHTMLTag(sub_splited)
-            selector = sub_sel.join symb
-#        selector = wrapper(selector.match(/'.*?'/g), "ext-q-string", selector)
-#        selector = wrapper(selector.match(/".*?"/g), "ext-q-string", selector)
-
-
-        wrapper(selector.match(/[a-zA-Z0-9-_#]+(?=[^<>]*(?:<[^<>]*>[^<>]*)*$)/g), "ext-q-fn", selector)
-
+        wrapHTMLTag selector.replace /([a-zA-Z0-9-_#]+)(?=[^<>]*(?:<[^<>]*>[^<>]*)*$)/g, "<s class='ext-q-fn'>$1</s>"
 
     postProduction: (html)->
         html = html.replace(/;/g, "<s class='ext-q-special'>;</s>").replace(/\*/g, "<s class='ext-q-special'>*</s>")

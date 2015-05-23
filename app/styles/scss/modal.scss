@@ -368,7 +368,7 @@ textarea{
             div+div{
                 margin-left: 5px;
             }
-            .ext-css-rule-prop-key{
+            .ext-css-rule-prop-key, .ext-style-name{
                 color: #9876aa;
                 font-weight: bold;
             }
@@ -403,6 +403,9 @@ textarea{
         }
         &.ext-q-string{
             color: #A5C261;
+            s{
+                color: #A5C261!important;
+            }
         }
 
     }

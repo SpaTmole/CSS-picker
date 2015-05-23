@@ -62,7 +62,7 @@ class StyleParser
         return @
 
     getCustomStyles: ->
-        @styles = @parseRules $(@element).attr('style') or ""
+        @styles = @parseRules(($(@element).attr('style') or "").replace(/^[\s\n\t]+/, "").replace(/[\s\n\t]$/, ""))
         @attributes = {}
         attributes = $(@element)[0].attributes
         for attribute in attributes
