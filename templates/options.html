@@ -58,20 +58,99 @@
         }
         .switchOn:after
         {
-            left: 21px !important;
+            left: 32px !important;
+        }
+    </style>
+    <style>
+        html, body{
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+        body{
+            background: #333;
+            padding-top: 100px;
+            color: #a0a8b6;
+        }
+        .header{
+            width: 100%;
+            height: 100px;
+            background: #454545;
+            border-bottom: inset 2px #222;
+            color: whitesmoke;
+            position: fixed;
+            top: 0;
+        }
+        .header h1{
+            height: 100px;
+            display: inline-block;
+            margin: auto;
+            top: 0;
+            bottom: 0;
+            position: absolute;
+            line-height: 4;
+        }
+        .header img{
+            height: 100px;
+        }
+        .shortcut-btn{
+            height: 40px;
+            background: linear-gradient(180deg, #555 0%, #444 50%, #222 100%);
+            border: none;
+            font-family: Arial;
+            color: #a0a8b6;
+            border-radius: 4px;
+            margin-left: 10px;
+            margin-top: 20px;
+        }
+        .shortcut-btn:active{
+            background: linear-gradient(0deg, #555 0%, #444 50%, #222 100%);
+        }
+        div:not(.header){
+            margin-left: 10px;
+        }
+        .hidden-shortuct{
+            display: block;
+            left: 180px;
+            position: relative;
+            top: -37px;
+        }
+        .hidden-shortuct button{
+            height: 36px;
+            background: linear-gradient(0deg, #555 0%, #444 50%, #222 100%);
+            border: none;
+            color: whitesmoke;
+        }
+        .hidden-shortuct button:active{
+            background: linear-gradient(180deg, #555 0%, #444 50%, #222 100%);
+        }
+        .hidden-shortuct input{
+            height: 30px;
+            background: #454545;
+            color: whitesmoke;
+            border-color: #272727;
         }
     </style>
 </head>
 <body>
 <!-- TODO: Place here a logo -->
-<div>
-    <span id="enable-disable-label"></span>
-
+<div class="header">
+    <img src="/app/images/icon.png"/>
+    <h1>CSS Picker options</h1>
 </div>
-<script>
-    $('ul>li').on('click', function(){
-        $(this).text("Wooohoo!")
-    })
-</script>
+<div>
+    <h2>Turn on/off extension:</h2>
+    <input type="checkbox" name="checkboxName" class="checkbox"/>
+    <div class="switch"></div>
+</div>
+<div>
+    <button id="ext-shortcut-toggler" class="shortcut-btn">Setup inspection hotkey</button>
+    <div id="ext-shortcut-keeper" class="hidden-shortuct" style="display: none;">
+        <input id="shortcut_setup" type="text"><button id="drop">Drop</button>
+    </div>
+</div>
+
+<script src="/dest/lib.min.js"></script>
+<script src="/dest/options.js"></script>
 </body>
 </html>

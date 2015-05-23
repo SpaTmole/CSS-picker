@@ -204,10 +204,23 @@ $(document).ready ()->
             if request.message is "disableInspection"
                 app_enabled = no
 
+            if request.message is "setupShortcut"
+                Mousetrap.unbind hotkey
+                hotkey = request.data
+                Mousetrap.bind(hotkey, ()->
+                    alert('Shots were fired...')
+                )
+            if request.message is "appStatus"
+                app_enabled = request.data
+                hotkey = request.advanced.hotkey
+                Mousetrap.bind(hotkey, ()->
+                    alert('Shots were fired...')
+                )
+    sendRequest
+        message: "appStatus"
+
     $(window).on('mousedown', (e)->
         if app_enabled
             if e.button is 2
                 parser = new StyleParser e.toElement
     )
-
-    #TODO: Add hotkey handling

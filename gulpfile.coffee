@@ -4,7 +4,12 @@ gutil       = require "gulp-util"
 coffeelint  = require "gulp-coffeelint"
 sass        = require "gulp-sass"
 uglify      = require "gulp-uglify"
-lib         = require('bower-files')()
+lib         = require('bower-files')(
+    overrides:
+        mousetrap:
+            main: ['mousetrap.js', 'plugins/record/mousetrap-record.js']
+            dependencies: {}
+)
 #karma       = require "gulp-karma"
 del         = require "del"
 concat      = require "gulp-concat"

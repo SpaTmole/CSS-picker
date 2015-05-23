@@ -228,7 +228,10 @@ chrome.runtime.onInstalled.addListener ()->
     broadcastData = (data) ->
         for port in ports
             data.csrf = message_bus_uuid
-            port.postMessage data
+            try
+                port.postMessage data
+            catch ex
+                console.error "Something wrong with port: ", port, ex
 
     chrome.runtime.onConnect.addListener (port) ->
         if port.name is message_bus_uuid
@@ -288,6 +291,15 @@ chrome.runtime.onInstalled.addListener ()->
                         sendRequest
                             message: request.message
                             data: app_enabled
+                            advanced:
+                                hotkey: app_hotkey_inspection
+
+                    if request.message is "setupShortcut"
+                        localStorage.setItem("#{message_bus_uuid}-hotkey", request.data)
+                        app_hotkey_inspection = request.data
+                        broadcastData
+                            message: request.message
+                            data: request.data
 
 
 loadTemplate = (template_name)->
