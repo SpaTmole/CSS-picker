@@ -224,19 +224,20 @@ chrome.runtime.onInstalled.addListener ()->
             enabled: yes
             title: "Inspect element style"
 
-    ports = []
+    ports = {}
     broadcastData = (data) ->
-        for port in ports
+        $.each ports, (_id, port)->
             data.csrf = message_bus_uuid
             try
                 port.postMessage data
             catch ex
                 console.error "Something wrong with port: ", port, ex
+                delete ports[_id]
 
     chrome.runtime.onConnect.addListener (port) ->
         if port.name is message_bus_uuid
             console.log "Extension initiated: ", port
-            ports.push(port);
+            ports[port.sender.tab.id] = port;
             sendRequest = ((csrf)->
                 return (args)->
                     args.csrf = csrf
@@ -301,6 +302,9 @@ chrome.runtime.onInstalled.addListener ()->
                             message: request.message
                             data: request.data
 
+            port.onDisconnect.addListener (closed)->
+                delete ports[closed.sender.tab.id]
+                console.log "Port is closed:", closed
 
 loadTemplate = (template_name)->
     $.ajax
