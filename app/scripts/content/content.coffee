@@ -160,12 +160,77 @@ $(document).ready ()->
     hotkey = ""
     message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
     viewController = new TemplateHandler()
-    port = chrome.runtime.connect name: message_bus_uuid
+    port = chrome.runtime.connect name: "#{message_bus_uuid}-#{Math.random().toFixed(7) * 10000000}"
     sendRequest = ((csrf)->
         return (args)->
             args.csrf = csrf
             return port.postMessage args
     )(message_bus_uuid)
+    hotkeyInspection = (()->
+        GetAllElementsAt = (x, y) ->
+            $elements = $("body *").map(()->
+                #TODO:  add positioning by getClientRect and correct offset with scrollX(Y)
+                offset = @.getBoundingClientRect()
+                l = offset.left + window.scrollX;
+                r = offset.right + window.scrollX;
+                t = offset.top + window.scrollY;
+                b = offset.bottom + window.scrollY;
+
+                if (y <= b and y >= t) and (x <= r and x >= l)
+                    $(@)
+                else
+                    null
+            )
+            return $elements
+
+        inspectionToggle = no
+        offscreen = $("<div id='extCssPickerOffscreenSelection'></div>")
+        offscreen.css
+            position: 'absolute',
+            'z-index': 999999,
+            opacity: 0.45,
+            background: 'pink'
+        target = null
+        $(window).on('click', ()->
+            if inspectionToggle and app_enabled
+                $(offscreen).detach()
+                inspectionToggle = no
+                if app_enabled
+                    parser = new StyleParser target
+                    result = parser.invoke(external_resources)
+                    console.log "CSS: ", result
+                    sendRequest
+                        message: "loadTemplate"
+                        name: "modal"
+                        data: result
+        )
+        ()->
+            inspectionToggle = !inspectionToggle
+            if inspectionToggle and app_enabled
+                $('html').append(offscreen)
+                $(window).on('mousemove', (e)->
+                    if inspectionToggle and app_enabled
+                        elementsMouseIsOver = GetAllElementsAt e.clientX, e.clientY
+                        selectedElement = null
+                        _indexOfLast = elementsMouseIsOver.length - 1
+                        selectedElement = elementsMouseIsOver[_indexOfLast]
+                        while (selectedElement.id is "extCssPickerOffscreenSelection" or selectedElement.css('display') is 'none') and _indexOfLast > 0
+                            _indexOfLast -= 1
+                            selectedElement = elementsMouseIsOver[_indexOfLast]
+
+                        target = selectedElement[0]
+                        #                        console.log "under selection ", target
+                        client_rect = target.getBoundingClientRect()
+                        offscreen.css
+                            height: client_rect.bottom - client_rect.top
+                            left: client_rect.left + window.scrollX
+                            top: client_rect.top + window.scrollY
+                            width: client_rect.right - client_rect.left
+                            'z-index':  0
+                )
+            else
+                offscreen.detach()
+    )()
     external_resources = new ExternalResourceKeeper(sendRequest)
     port.onMessage.addListener (request) ->
         if request.csrf == message_bus_uuid
@@ -208,13 +273,13 @@ $(document).ready ()->
                 Mousetrap.unbind hotkey
                 hotkey = request.data
                 Mousetrap.bind(hotkey, ()->
-                    alert('Shots were fired...')
+                    hotkeyInspection()
                 )
             if request.message is "appStatus"
                 app_enabled = request.data
                 hotkey = request.advanced.hotkey
                 Mousetrap.bind(hotkey, ()->
-                    alert('Shots were fired...')
+                    hotkeyInspection()
                 )
     sendRequest
         message: "appStatus"

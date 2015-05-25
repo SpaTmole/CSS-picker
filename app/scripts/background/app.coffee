@@ -235,9 +235,14 @@ chrome.runtime.onInstalled.addListener ()->
                 delete ports[_id]
 
     chrome.runtime.onConnect.addListener (port) ->
-        if port.name is message_bus_uuid
+        if port.name.match(new RegExp "^#{message_bus_uuid}")
             console.log "Extension initiated: ", port
-            ports[port.sender.tab.id] = port;
+            if port.sender.tab
+                tabId = port.sender.tab.id
+#                port = chrome.tabs.connect tabId
+                ports[tabId] = port
+            else
+                ports[port.sender.url] = port
             sendRequest = ((csrf)->
                 return (args)->
                     args.csrf = csrf
@@ -303,7 +308,10 @@ chrome.runtime.onInstalled.addListener ()->
                             data: request.data
 
             port.onDisconnect.addListener (closed)->
-                delete ports[closed.sender.tab.id]
+                if closed.sender.tab
+                    delete ports[closed.sender.tab.id]
+                else
+                    delete ports[closed.sender.url]
                 console.log "Port is closed:", closed
 
 loadTemplate = (template_name)->

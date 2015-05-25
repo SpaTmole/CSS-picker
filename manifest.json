@@ -26,7 +26,7 @@
   },
   "author": "Konstantin Oficerov",
   "permissions": [
-    "activeTab",
+    "tabs",
     "browsingData",
     "contextMenus",
     "storage",

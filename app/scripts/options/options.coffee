@@ -13,6 +13,7 @@ $(document).ready ()->
                 $("#enable-disable-label").text if request.data then "Enabled" else "Disabled"
                 if request.data then $(".switch").attr('class', 'switch switchOn') else $(".switch").attr('class', 'switch')
                 shortcut = request.advanced.hotkey
+                $("#ext-shortcut-keeper #shortcut_setup").val(shortcut);
             if request.message is "disableInspection"
                 $(".switch").attr 'class', 'switch'
                 $("#enable-disable-label").text "Disabled"
@@ -21,8 +22,6 @@ $(document).ready ()->
                 $("#enable-disable-label").text "Enabled"
     sendRequest
         message: "appStatus"
-
-    #TODO: make hooks to enable/disable
 
     $(".switch").on 'click', ()->
         $(@).toggleClass "switchOn"
@@ -51,3 +50,11 @@ $(document).ready ()->
     ).on('blur', ()->
         $(@).val(shortcut)
     ).val(shortcut)
+
+    $('#drop').on('click', ()->
+        $("#ext-shortcut-keeper #shortcut_setup").val("");
+        shortcut = ''
+        sendRequest
+            message: "setupShortcut"
+            data: shortcut
+    )
