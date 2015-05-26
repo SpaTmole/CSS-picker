@@ -37,8 +37,10 @@ class StyleParser
         parsed_external_sheets = []
         for sheet in document.styleSheets
             if sheet.cssRules?
-                for rule in sheet.cssRules
-                    straightFetch rule
+                if sheet.cssRules.length and !(sheet.cssRules[0].cssText.match(/^#adPosition0/))
+                # Sorry AdBlock, we aren't looking for you
+                    for rule in sheet.cssRules
+                        straightFetch rule
             else if sheet.href and !(sheet.href in parsed_external_sheets)
                 raw_sheet = external.storage[sheet.href] or ''
                 if raw_sheet.length
@@ -171,10 +173,10 @@ $(document).ready ()->
             $elements = $("body *").map(()->
                 #TODO:  add positioning by getClientRect and correct offset with scrollX(Y)
                 offset = @.getBoundingClientRect()
-                l = offset.left + window.scrollX;
-                r = offset.right + window.scrollX;
-                t = offset.top + window.scrollY;
-                b = offset.bottom + window.scrollY;
+                l = offset.left; #+ window.scrollX;
+                r = offset.right; #+ window.scrollX;
+                t = offset.top; #+ window.scrollY;
+                b = offset.bottom; #+ window.scrollY;
 
                 if (y <= b and y >= t) and (x <= r and x >= l)
                     $(@)
@@ -212,11 +214,18 @@ $(document).ready ()->
                     if inspectionToggle and app_enabled
                         elementsMouseIsOver = GetAllElementsAt e.clientX, e.clientY
                         selectedElement = null
-                        _indexOfLast = elementsMouseIsOver.length - 1
-                        selectedElement = elementsMouseIsOver[_indexOfLast]
-                        while (selectedElement.id is "extCssPickerOffscreenSelection" or selectedElement.css('display') is 'none') and _indexOfLast > 0
-                            _indexOfLast -= 1
-                            selectedElement = elementsMouseIsOver[_indexOfLast]
+#                        _indexOfLast = elementsMouseIsOver.length - 1
+#                        selectedElement = elementsMouseIsOver[_indexOfLast]
+#                        while (selectedElement.id is "extCssPickerOffscreenSelection" or selectedElement.css('display') is 'none') and _indexOfLast > 0
+#                            _indexOfLast -= 1
+#                            selectedElement = elementsMouseIsOver[_indexOfLast]
+                        max_depth = 0;
+                        $.each(elementsMouseIsOver, (_i1, el)->
+                            _max_depth = $(el).parents().length;
+                            if max_depth < _max_depth and $(el).css('display') isnt 'none'
+                                max_depth = _max_depth
+                                selectedElement = el
+                        )
 
                         target = selectedElement[0]
                         #                        console.log "under selection ", target

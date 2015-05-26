@@ -132,22 +132,17 @@ class TemplateParser
         for attr of object.attributes
             ul_attrs.append $("<li class='ext-attribute'><div class='ext-attr-name'>#{attr}: </div><div class='ext-attr-value'>#{object.attributes[attr]}</div></li>")
 
-#        for rule in object.rules
-#            li = $('<li class="ext-css-rule"></li>')
-#            header = $("<div class='ext-css-rule-header'></div>")
-#            header.append $("<div><b>Media: </b><span>#{rule.media}</span></div>")
-#            header.append $("<div class='ext-css-rule-selector' title=\'#{rule.selector}\'>#{rule.selector}</div>")
-#            body = $("<ul class='ext-css-rule-props'></ul>")
-#            for prop of rule.properties
-#                body.append $("<li><div class='ext-css-rule-prop-key'>#{prop}: </div><div class='ext-css-rule-prop-val'>#{rule.properties[prop]}</div></li>")
-#            li.append(header).append(body)
-#            ul_rules.append(li)
         if ul_styles.children().length
              col1.append("<h3>Styles:</h3>").append(ul_styles)
         if ul_attrs.children().length
              col1.append("<h3>Attributes:</h3>").append(ul_attrs)
-#        if ul_rules.children().length
-#             col1.append("<h3>CSS Rules:</h3>").append(ul_rules)
+
+        html_view = "&lt;#{object.element.split('.')[0]}" +
+                    " #{wrapAttributes(object.attributes)} /&gt;"
+
+        col1.append("<h3>Markup:</h3>")
+        col1.append $("<div class='code-site'>#{html_view}</div>")
+
         @renderFinal(object, col2)
         render.find('.modal-body').append(col1).append(col2)
         @postProduction render.wrap('<p></p>').parent().html()
@@ -170,6 +165,12 @@ class TemplateParser
             for match in list
                 _rule = _rule.replace(new RegExp(match), "<s class='#{cls}'>#{match}</s>")
         _rule
+
+    wrapAttributes = (attrs)->
+        res = ""
+        for key of attrs
+            res += "<s class='ext-q-fn'>#{key}</s>=\"<s class='ext-q-string'>#{attrs[key]}</s>\" "
+        res
 
     html_tags = [
         "a", "abbr","acronym","address","applet","area","article","aside","audio","b","base","basefont","bdi","bdo","big","blockquote","body","br","button","canvas","caption","center","cite","code","col","colgroup","datalist","dd","del","details","dfn","dialog","dir","div","dl","dt","em","embed","fieldset","figcaption","figure","font","footer","form","frame","frameset","h1> - <h6","head","header","hr","html","i","iframe","img","input","ins","kbd","keygen","label","legend","li","link","main","map","mark","menu","menuitem","meta","meter","nav","noframes","noscript","object","ol","optgroup","option","output","p","param","pre","progress","q","rp","rt","ruby","s","samp","script","section","select","small","source","span","strike","strong","style","sub","summary","sup","table","tbody","td","textarea","tfoot","th","thead","time","title","tr","track","tt","u","ul","var","video","wbr",
@@ -199,7 +200,7 @@ class TemplateParser
         wrapHTMLTag selector.replace /([a-zA-Z0-9-_#]+)(?=[^<>]*(?:<[^<>]*>[^<>]*)*$)/g, "<s class='ext-q-fn'>$1</s>"
 
     postProduction: (html)->
-        html = html.replace(/;/g, "<s class='ext-q-special'>;</s>").replace(/\*/g, "<s class='ext-q-special'>*</s>")
+        html = html.replace(/\*/g, "<s class='ext-q-special'>*</s>")
         .replace(/\+/g, "<s class='ext-q-special'>+</s>").replace(/~/, "<s class='ext-q-special'>~</s>")
         html
 
