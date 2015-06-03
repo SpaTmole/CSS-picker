@@ -5,7 +5,7 @@
 
   "description": "Powerful tool for developers which allows to pick whole pack of CSS rules from selected DOM element.",
   "icons": {
-    "256": "app/images/icon.png"
+    "256": "dest/icon.png"
   },
   "content_scripts": [ {
     "js": ["dest/lib.min.js", "dest/content.js"],
@@ -15,7 +15,7 @@
   "options_page": "templates/options.html",
   "browser_action": {
     "default_icon": {
-      "256": "app/images/icon.png"
+      "256": "dest/icon.png"
     },
     "default_title": "CSS Picker",
     "default_popup": "templates/popup.html"
