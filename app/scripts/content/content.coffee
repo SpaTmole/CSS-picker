@@ -1,3 +1,13 @@
+if !@Debugger
+    class _Debugger
+        log: ()->
+        error: ()->
+        info: ()->
+else
+    _Debugger = Debugger
+
+window.chromeExtCSSPickerDebugLogger = new _Debugger(yes)
+
 class StyleParser
     constructor: (item)->
         @element = item
@@ -10,7 +20,7 @@ class StyleParser
             if $(@element)[0] in $(selector)
                 return yes
         catch wrong_selector
-            console.error "Invalid selector: ", selector, " from ", {selector: css_selector}
+            chromeExtCSSPickerDebugLogger.error "Invalid selector: ", selector, " from ", {selector: css_selector}
         selectors_set = css_selector.split(',')
         for selector in selectors_set
             selector = selector.split(':')[0]
@@ -18,7 +28,7 @@ class StyleParser
                 if $(@element)[0] in $(selector)
                     return yes
             catch wrong_selector
-                console.error "Invalid selector: ", selector, " from ", {selector: css_selector}
+                chromeExtCSSPickerDebugLogger.error "Invalid selector: ", selector, " from ", {selector: css_selector}
         return no
 
     fetchStyleSheetRules: (external)->
@@ -37,7 +47,7 @@ class StyleParser
         parsed_external_sheets = []
         for sheet in document.styleSheets
             if sheet.cssRules?
-                if sheet.cssRules.length and !(sheet.cssRules[0].cssText.match(/^#adPosition0/))
+                if sheet.cssRules.length and sheet.cssRules[0].cssText.indexOf('#adPosition0') is -1
                 # Sorry AdBlock, we aren't looking for you
                     for rule in sheet.cssRules
                         straightFetch rule
@@ -50,7 +60,7 @@ class StyleParser
                     parsed_external_sheets.push sheet.href
             sheet.extCSSPickerAdvancedPropVisited = true
         for stylesheet in temp_stylesheets
-            console.info("Attaching external stylesheet...")
+            chromeExtCSSPickerDebugLogger.info("Attaching external stylesheet...")
             $(stylesheet).insertAfter $('script').first()
         for sheet in document.styleSheets
             if sheet.cssRules? and !sheet.extCSSPickerAdvancedPropVisited
@@ -58,7 +68,7 @@ class StyleParser
                     straightFetch rule
             sheet.extCSSPickerAdvancedPropVisited = false
         for stylesheet in temp_stylesheets
-            console.info("...Detaching external stylesheet")
+            chromeExtCSSPickerDebugLogger.info("...Detaching external stylesheet")
             $(stylesheet).remove()
 
         return @
@@ -120,28 +130,28 @@ class TemplateHandler
     bind: (template_name, element, fn) ->
         template = @get(template_name)
         if !template
-            return console.error "Template <#{template_name}> does not exist."
+            return chromeExtCSSPickerDebugLogger.error "Template <#{template_name}> does not exist."
         binding_elem = $(template).find($(element))
         if !binding_elem
-            return console.error "Couldn't find given element within <#{template_name}> template."
+            return chromeExtCSSPickerDebugLogger.error "Couldn't find given element within <#{template_name}> template."
         return $(binding_elem).on 'click', fn
 
     render: (name) ->
         template = @get(name)
         if !template
-            return console.error "Template <#{name}> does not exist."
+            return chromeExtCSSPickerDebugLogger.error "Template <#{name}> does not exist."
         $(template).appendTo($('body'))
 
     dismiss: (name) ->
         template = @get(name)
         if !template
-            return console.error "Template <#{name}> does not exist."
+            return chromeExtCSSPickerDebugLogger.error "Template <#{name}> does not exist."
         $(template).detach()
 
     destroy: (name) ->
         template = @get(name)
         if !template
-            return console.error "Template <#{name}> does not exist."
+            return chromeExtCSSPickerDebugLogger.error "Template <#{name}> does not exist."
         $(template).remove()
         delete @templates[name]
 
@@ -200,7 +210,7 @@ $(document).ready ()->
                 if app_enabled
                     parser = new StyleParser target
                     result = parser.invoke(external_resources)
-                    console.log "CSS: ", result
+                    chromeExtCSSPickerDebugLogger.log "CSS: ", result
                     sendRequest
                         message: "loadTemplate"
                         name: "modal"
@@ -228,7 +238,7 @@ $(document).ready ()->
                         )
 
                         target = selectedElement[0]
-                        #                        console.log "under selection ", target
+                        #                        chromeExtCSSPickerDebugLogger.log "under selection ", target
                         client_rect = target.getBoundingClientRect()
                         offscreen.css
                             height: client_rect.bottom - client_rect.top
@@ -245,10 +255,10 @@ $(document).ready ()->
         if request.csrf == message_bus_uuid
             if app_enabled
                 if request.message == "inspectWithContextMenu"
-                    console.log 'Data Recieved: ', request.data
+                    chromeExtCSSPickerDebugLogger.log 'Data Recieved: ', request.data
                     if request.data.enabled
                         result = parser.invoke(external_resources)
-                        console.log "CSS: ", result
+                        chromeExtCSSPickerDebugLogger.log "CSS: ", result
                         sendRequest
                             message: "loadTemplate"
                             name: "modal"
@@ -265,7 +275,7 @@ $(document).ready ()->
                             $(modal).remove()
                         )
                 if request.message is "loadExternalAsset"
-                    console.log "External asset loaded", request
+                    chromeExtCSSPickerDebugLogger.log "External asset loaded", request
                     external_resources.storage[request.url] = request.data
                     external_resources.processing -= 1
 

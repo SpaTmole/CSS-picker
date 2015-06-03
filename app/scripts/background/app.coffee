@@ -297,10 +297,7 @@ chrome.runtime.onInstalled.addListener ()->
                             data: request.data
 
             port.onDisconnect.addListener (closed)->
-                if closed.sender.tab
-                    delete ports[closed.sender.tab.id]
-                else
-                    delete ports[closed.sender.url]
+                delete ports[closed.name]
                 console.log "Port is closed:", closed
 
     chrome.contextMenus.onClicked.addListener (info, tab) ->

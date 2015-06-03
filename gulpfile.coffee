@@ -10,6 +10,7 @@ lib         = require('bower-files')(
             main: ['mousetrap.js', 'plugins/record/mousetrap-record.js']
             dependencies: {}
 )
+
 #karma       = require "gulp-karma"
 del         = require "del"
 concat      = require "gulp-concat"
@@ -53,7 +54,18 @@ gulp.task "lintspaces", () ->
         .pipe(lintspaces.reporter())
 
 
-gulp.task "coffee", ["coffee_lint", "lintspaces"], () ->
+gulp.task "coffee_prod", ["coffee_lint", "lintspaces"], () ->
+    gulp.src(path.coffee.bg)
+        .pipe(coffee({bare: yes}).on("error", gutil.log))
+        .pipe(gulp.dest(path.js.bg))
+    gulp.src(path.coffee.content)
+        .pipe(coffee({bare: no}).on("error", gutil.log))
+        .pipe(gulp.dest(path.js.content))
+    gulp.src(path.coffee.options)
+        .pipe(coffee({bare: yes}).on("error", gutil.log))
+        .pipe(gulp.dest(path.dest))
+
+gulp.task "coffee_debug", ["coffee_lint", "lintspaces"], () ->
     gulp.src(path.coffee.bg)
         .pipe(coffee({bare: yes}).on("error", gutil.log))
         .pipe(gulp.dest(path.js.bg))
@@ -64,19 +76,21 @@ gulp.task "coffee", ["coffee_lint", "lintspaces"], () ->
         .pipe(coffee({bare: yes}).on("error", gutil.log))
         .pipe(gulp.dest(path.dest))
 
-
-gulp.task "concat_bg", ["coffee"], () ->
+gulp.task "concat_bg", () ->
     gulp.src(["#{dev}/js/bg/*.js"])
         .pipe(concat("app.js"))
         .pipe(gulp.dest(path.dest))
 
-gulp.task "concat_content", ["coffee"], () ->
-    gulp.src(["#{dev}/js/content/*.js"])
-        .pipe(concat("content.js"))
+gulp.task "concat_content", () ->
+    gulp.src("#{dev}/js/content/content.js")
         .pipe(gulp.dest(path.dest))
 
-gulp.task "build_app", ["concat_bg", "concat_content"], () ->
-    del(["#{dev}/js/"])  # place here all excess js files
+gulp.task "build_app", ["coffee_prod"], ()->
+    gulp.src(["#{dev}/js/bg/*.js"])
+        .pipe(concat("app.js"))
+        .pipe(gulp.dest(path.dest))
+    gulp.src("#{dev}/js/content/content.js")
+        .pipe(gulp.dest(path.dest))
 
 gulp.task 'concat_bower', () ->
   gulp.src lib.ext('js').files
@@ -95,8 +109,15 @@ gulp.task "styles", ["sass"], ->
         .pipe(gulp.dest(path.dest))
     #del("#{[path.css]}/")
 
-gulp.task "build", ["build_app", "concat_bower", "styles"]
+gulp.task "production", ["build_app", "concat_bower", "styles"], ()->
+    console.log "Deleting temporary files..."
+    del(["#{dev}/js/"])  # place here all excess js files
 
+gulp.task "debug", ["concat_bower", "styles", "coffee_debug", "concat_bg"], ()->
+    gulp.src(["#{dev}/js/content/debugger.js", "#{dev}/js/content/content.js"])
+        .pipe(concat("content.js"))
+        .pipe(gulp.dest(path.dest))
+    del(["#{dev}/js/"])
 
 #gulp.task "test", ["build", "karma"]
 
