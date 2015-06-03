@@ -1,1 +1,1 @@
-zip -r application_release.zip ./manifest.json ./schema.json ./dest/
+zip -r application_release.zip ./manifest.json ./schema.json ./dest/ ./templates/

@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "CSS Picker",
+  "name": "CSS Picker (beta)",
   "version": "1.0",
 
   "description": "Powerful tool for developers which allows to pick whole pack of CSS rules from selected DOM element.",
