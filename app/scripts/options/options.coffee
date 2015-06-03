@@ -1,5 +1,5 @@
 $(document).ready ()->
-    message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
+    message_bus_uuid = "2151ada6-a6eb-447c-82b9-0b3f30d0aff4-#{Math.random().toFixed(7) * 10000000}"
     port = chrome.runtime.connect name: message_bus_uuid
     shortcut = ""
     sendRequest = ((csrf)->

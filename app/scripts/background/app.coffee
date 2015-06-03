@@ -210,15 +210,15 @@ chrome.runtime.onInstalled.addListener ()->
     app_enabled = localStorage.getItem("#{message_bus_uuid}-enabled") or yes
     app_hotkey_inspection = localStorage.getItem("#{message_bus_uuid}-hotkey") or ""
     chrome.contextMenus.create
-            title: "Inspect element style (Loading ...)",
-            enabled: no
+            title: "Inspect element style",
+            enabled: yes
             id: context_menu_guid,
             contexts: ["all"]
 
-    disableMenu = () ->
+    disableMenu = (optional_status) ->
         chrome.contextMenus.update context_menu_guid,
             enabled: no
-            title: "Inspector disabled"
+            title: optional_status or "Inspector disabled"
 
     enableMenu = () ->
         chrome.contextMenus.update context_menu_guid,
@@ -228,7 +228,7 @@ chrome.runtime.onInstalled.addListener ()->
     ports = {}
     broadcastData = (data) ->
         $.each ports, (_id, port)->
-            data.csrf = message_bus_uuid
+            data.csrf = _id
             try
                 port.postMessage data
             catch ex
@@ -238,28 +238,14 @@ chrome.runtime.onInstalled.addListener ()->
     chrome.runtime.onConnect.addListener (port) ->
         if port.name.match(new RegExp "^#{message_bus_uuid}")
             console.log "Extension initiated: ", port
-            if port.sender.tab
-                tabId = port.sender.tab.id
-#                port = chrome.tabs.connect tabId
-                ports[tabId] = port
-            else
-                ports[port.sender.url] = port
+            ports[port.name] = port
             sendRequest = ((csrf)->
                 return (args)->
                     args.csrf = csrf
                     return port.postMessage args
-            )(message_bus_uuid)
-            chrome.contextMenus.onClicked.addListener (info, tab) ->
-                if info.menuItemId == "chromeExtCssPickerContextMenuInspectorItem"
-                    console.log 'Inspecting element: ', arguments
-                    sendRequest
-                        message: 'inspectWithContextMenu'
-                        data:
-                            enabled: app_enabled
-                            hotkey: app_hotkey_inspection
-                return
+            )(port.name)
             port.onMessage.addListener (request)->
-                if request.csrf == message_bus_uuid
+                if request.csrf is port.name
                     if app_enabled
                         if request.message is "loadTemplate"
                             loadTemplate(request.name).done (html)->
@@ -269,11 +255,13 @@ chrome.runtime.onInstalled.addListener ()->
                                     name: request.name
                                     data: templateParser.render(data: request.data)
                         if request.message is "loadExternalAsset"
+                            disableMenu "Loading..."
                             xhr = new XMLHttpRequest()
                             url = request.url
                             xhr.open "GET", url, yes
                             xhr.onreadystatechange = ()->
                                 if xhr.readyState is 4
+                                    enableMenu()
                                     sendRequest
                                         message: "loadExternalAsset"
                                         data: xhr.responseText
@@ -314,6 +302,19 @@ chrome.runtime.onInstalled.addListener ()->
                 else
                     delete ports[closed.sender.url]
                 console.log "Port is closed:", closed
+
+    chrome.contextMenus.onClicked.addListener (info, tab) ->
+        if info.menuItemId == "chromeExtCssPickerContextMenuInspectorItem"
+            console.log 'Inspecting element: ', arguments
+            for port_name of ports
+                if ports[port_name].sender.tab and ports[port_name].sender.tab.id is tab.id
+                    ports[port_name].postMessage
+                        message: 'inspectWithContextMenu'
+                        csrf: port_name
+                        data:
+                            enabled: app_enabled
+                            hotkey: app_hotkey_inspection
+        return
 
 loadTemplate = (template_name)->
     $.ajax

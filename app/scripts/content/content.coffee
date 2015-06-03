@@ -160,9 +160,9 @@ $(document).ready ()->
     result = null
     app_enabled = yes
     hotkey = ""
-    message_bus_uuid = '2151ada6-a6eb-447c-82b9-0b3f30d0aff4'
+    message_bus_uuid = "2151ada6-a6eb-447c-82b9-0b3f30d0aff4-#{Math.random().toFixed(7) * 10000000}"
     viewController = new TemplateHandler()
-    port = chrome.runtime.connect name: "#{message_bus_uuid}-#{Math.random().toFixed(7) * 10000000}"
+    port = chrome.runtime.connect name: message_bus_uuid
     sendRequest = ((csrf)->
         return (args)->
             args.csrf = csrf
@@ -268,9 +268,6 @@ $(document).ready ()->
                     console.log "External asset loaded", request
                     external_resources.storage[request.url] = request.data
                     external_resources.processing -= 1
-                    if !external_resources.processing
-                        sendRequest
-                            message: "enableInspection"
 
             if request.message is "enableInspection"
                 app_enabled = yes
@@ -293,8 +290,7 @@ $(document).ready ()->
     sendRequest
         message: "appStatus"
 
-    $(window).on('mousedown', (e)->
+    $(document).mousedown (e)->
         if app_enabled
             if e.button is 2
                 parser = new StyleParser e.toElement
-    )
